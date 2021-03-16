@@ -125,6 +125,8 @@ for (client in 1:370){
         ########################## Forecast with ARIMA######################
         
         ######ROLLING WINDOW FORECAST __ 1day forecast over 7 days
+        #the length of training set remains the same; 
+        #taking newly obtained forecast values as the newest data to the training set while deleting a same number of oldest data from the training set
         
         ARIMAfit_short <- auto.arima(tshourly_short[rowNum_short:shortTrain])
         #1 day forecast
@@ -137,9 +139,12 @@ for (client in 1:370){
         t.start = rowNum_short+24
         half1 <- tshourly_short[t.start:shortTrain]
         half2 <-  pd50
+        
+        #use rolling-day forecast for 7 days
         while (t.start < 169 ) {
           
-          ARIMAfit_short <- auto.arima(c(half1,half2))
+          #forecast the vector c(half1,half2)
+          ARIMAfit_short <- auto.arima(c(half,1,half2))
           
           #1 day forecast
           pd_s <- forecast(ARIMAfit_short, h = test1d.size)
@@ -154,13 +159,16 @@ for (client in 1:370){
           half2 <- c(half2,pd50)
           
         }
-        
+        #calculate loss result with actual values and the last round of rolling-day forecast
         results[counts,1] <- abs(normalizeQuant(actual1d,pd50,0.5))
         results[counts,2] <- abs(normalizeQuant(actual1d,pd90,0.9))
         
         
         
         #########ROLLING WINDOW FORECAST __ 7days forecast
+        
+        
+        #forecast directly for 7 days
         ARIMAfit_long <- auto.arima(tshourly_long[rowNum_long:train.size])
         #7 days forecast
         pd_l <- forecast(ARIMAfit_long, h = test7d.size)
@@ -175,6 +183,8 @@ for (client in 1:370){
       
         ########################## Forecast with ETS ########################
         
+        #the length of training set remains the same; 
+        #taking newly obtained forecast values as the newest data to the training set while deleting a same number of oldest data from the training set
         ETS_short <- ets(tshourly_short[rowNum_short:shortTrain])
         #1 day forecast
         pdETS_s <- forecast(ETS_short, h = test1d.size)
@@ -206,8 +216,7 @@ for (client in 1:370){
           half2 <- c(half2, pdETS50)
         }
         
-        
-        
+        #calculate loss result with actual values and the last round of rolling-day forecast
         results[counts,5] <- abs(normalizeQuant(actual1d,pdETS50,0.5))
         results[counts,6] <- abs(normalizeQuant(actual1d,pdETS90,0.9))
         
